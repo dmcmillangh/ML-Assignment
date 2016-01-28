@@ -36,7 +36,7 @@ hist(tr_x$roll_belt)
 hist(tr_x$total_accel_belt)
 ```
 
-With these distributions, a non-parametric method was selected, Using 10-fold cross-validation on the 14,718 observations in the training set, and the KNN method. To find the best value for K, tuneLength of 10 was set. Also, all variables were standardized to avoid problems from scaling differences.
+With these distributions obviously non-gaussian, a non-parametric method was selected for the analysis. The KNN method was used, using 10-fold cross-validation on the 14,718 observations in the training set. To find the best value for K, tuneLength of 10 was set. Also, all variables were standardized to avoid problems from scaling differences.
 
 ```{r}
 set.seed(2701)
