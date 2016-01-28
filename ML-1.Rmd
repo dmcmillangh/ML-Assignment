@@ -1,0 +1,58 @@
+---
+title: "Machine Learning Prediction Assignment"
+author: "David McMillan"
+date: "January 28, 2016"
+output: html_document
+---
+
+The task at hand is to use data from the "Human Activity Recognition" data provided via the cited paper to determine the quality of execution of various exercizes.  This paper deals with one exercize specifically: the Unilateral Dumbbell Biceps Curl.  Subjects were asked to do multiple repetitions correctly, then follow up with more repetitions making four specified common mistakes. This machine learning exercize is designed to detect these common mistakes.
+
+First we examine the data, and discover that there are numerous variables that are about 98% missing or NA.  Seven variables were used in identifying subjects, and exercize details.  All of these were deleted from the training data set.
+```{r,message=FALSE}
+require(dplyr)
+require(caret)
+require(data.table)
+
+pmlt<-read.csv("PML-TRAINING.csv")
+pmltst<-read.csv("PML-TESTING.csv")
+##exclude unused vars
+Exclude<-c(1:7,12:36,50:59,69:83,87:101,103:112,125:139,141:150)
+tst_x<-pmltst[,-Exclude]
+tr_x0<-pmlt[,-Exclude]
+```
+Also, though a very small (n=20) testing set was provided, the training file was split into training/testing sets and used for model accuracy assessment.
+```{r}
+set.seed(27)
+inTrain = createDataPartition(tr_x0$classe, p = .75)[[1]]
+tr_x = tr_x0[ inTrain,]
+tst_x = tr_x0[-inTrain,]
+```
+
+A look at the remaining 52 predictors reveals that few, if any, of them would be candidates for methods that assume normality.  For example, below are histograms of three such variables.
+```{r, echo=FALSE}
+par(mfrow=c(1,3))
+hist(tr_x$magnet_arm_x)
+hist(tr_x$roll_belt)
+hist(tr_x$total_accel_belt)
+```
+
+With these distributions, a non-parametric method was selected, Using 10-fold cross-validation on the 14,718 observations in the training set, and the KNN method. To find the best value for K, tuneLength of 10 was set. Also, all variables were standardized to avoid problems from scaling differences.
+
+```{r}
+set.seed(2701)
+ctrl <- trainControl(method="repeatedcv",repeats = 1) 
+ModelFit <- train(classe ~ ., data = tr_x, method = "knn", trControl = ctrl, preProcess = c("center","scale"), tuneLength = 10)
+ModelFit
+```
+To test the accuracy on the out-of-sample data, a confusion matrix is shown against the testing set.
+```{r}
+tr_xPred<-predict(ModelFit,tst_x)
+confusionMatrix(tr_xPred,tst_x$classe)
+```
+The expected error rate, therefore, is 1-96.9%, or just over 3%.
+
+Predictions for the 20-line test set supplied are:
+```{r}
+ tst_x0<-pmltst[,-Exclude]
+predict(ModelFit,tst_x0)
+```
